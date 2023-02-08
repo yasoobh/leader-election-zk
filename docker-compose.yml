@@ -1,0 +1,88 @@
+version: '3.1'
+
+services:
+  # add application containers
+  app1:
+    build: .
+    hostname: app1
+    environment:
+      ZOOKEEPER_URLS: zoo1:2181,zoo2:2181,zoo3:2181
+    networks:
+      - leader-election-net
+    depends_on:
+      zoo1:
+        condition: service_healthy
+  
+  app2:
+    build: .
+    hostname: app2
+    environment:
+      ZOOKEEPER_URLS: zoo1:2181,zoo2:2181,zoo3:2181
+    networks:
+      - leader-election-net
+    depends_on:
+      zoo1:
+        condition: service_healthy
+  
+  app3:
+    build: .
+    hostname: app3
+    environment:
+      ZOOKEEPER_URLS: zoo1:2181,zoo2:2181,zoo3:2181
+    networks:
+      - leader-election-net
+    depends_on:
+      zoo1:
+        condition: service_healthy
+
+  zoo1:
+    image: zookeeper
+    hostname: zoo1
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+    networks:
+      - leader-election-net
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 3s
+      timeout: 1s
+      retries: 3
+    depends_on:
+      zoo2:
+        condition: service_healthy
+
+  zoo2:
+    image: zookeeper
+    hostname: zoo2
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+    networks:
+      - leader-election-net
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 3s
+      timeout: 1s
+      retries: 3
+    depends_on:
+      zoo3:
+        condition: service_healthy
+
+  zoo3:
+    image: zookeeper
+    hostname: zoo3
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+    networks:
+      - leader-election-net
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 3s
+      timeout: 1s
+      retries: 3
+  
+networks:
+  leader-election-net:
+    driver: bridge
